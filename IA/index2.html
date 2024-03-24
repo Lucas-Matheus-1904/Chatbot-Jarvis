@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conversa com Jarvis</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f2f2f2;
+    margin: 0;
+    padding: 0;
+  }
+
+  #container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  #conversation {
+    height: 200px;
+    overflow-y: scroll;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 20px;
+  }
+
+  .message {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    max-width: 80%;
+  }
+
+  .user {
+    background-color: #e2f0cb;
+    align-self: flex-end;
+  }
+
+  .gemini {
+    background-color: #c1ddf0;
+  }
+
+  #recordButton {
+    background-color: #4caf50;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+
+  #userInput {
+    width: calc(100% - 42px);
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    display: inline-block;
+    vertical-align: top;
+  }
+
+  #sendButton {
+    background-color: #2196f3;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <div id="container">
+    <h1>Conversa com Jarvis</h1>
+    <div id="conversation"></div>
+    <button id="recordButton">Gravar Áudio</button>
+    <textarea id="userInput" rows="4" cols="50" placeholder="Digite sua mensagem aqui..."></textarea>
+    <button id="sendButton" onclick="sendMessage()">Enviar</button>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "@google/generative-ai": "https://esm.run/@google/generative-ai"
+      }
+    }
+  </script>
+  <script type="module">
+    import { GoogleGenerativeAI } from "@google/generative-ai";
+
+    const API_KEY = "AIzaSyAIDN4mnonog2k6Lt1hfgGox3ePpI2wP6o";
+    const genAI = new GoogleGenerativeAI(API_KEY);
+    let conversationLog = document.getElementById("conversation");
+
+    document.getElementById("recordButton").addEventListener("click", startRecording);
+
+    async function startRecording() {
+      try {
+        const recognition = new window.webkitSpeechRecognition();
+        recognition.lang = 'pt-BR';
+
+        recognition.onresult = function(event) {
+          const userSpeech = event.results[0][0].transcript;
+          document.getElementById("userInput").value = userSpeech;
+        };
+
+        recognition.start();
+      } catch (error) {
+        console.error("Erro ao iniciar reconhecimento de voz:", error);
+      }
+    }
+
+    window.sendMessage = async function() {
+      const userInput = document.getElementById("userInput").value.trim();
+      if (userInput === "") return;
+
+      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      const result = await model.generateContent(userInput);
+      const response = await result.response;
+      const text = await response.text();
+
+      addMessage(userInput, "user");
+      addMessage(text, "gemini");
+
+      // Limpar a caixa de entrada de texto
+      document.getElementById("userInput").value = "";
+    };
+
+    function addMessage(message, sender) {
+      const messageElement = document.createElement("div");
+      messageElement.classList.add("message", sender);
+      messageElement.textContent = message;
+      conversationLog.appendChild(messageElement);
+      conversationLog.scrollTop = conversationLog.scrollHeight;
+    }
+  </script>
+</body>
+</html>
